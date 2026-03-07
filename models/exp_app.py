@@ -106,10 +106,10 @@ data, month, visitor, browser, os, region, traffic = user_input()
 prediction, probability = predict(data)
 if probability[0][1] >= 0.58:
     confidence = probability[0][1] * 100
-    st.success(f"✅ Purchase Made! — Confidence: {confidence:.1f}%")
+    st.success(f"### ✅ Purchase Made! — Confidence: {confidence:.1f}%")
 else:
     confidence = probability[0][0] * 100
-    st.warning(f"❌ No Purchase Made. — Confidence: {confidence:.1f}%")
+    st.warning(f"### ❌ No Purchase Made. — Confidence: {confidence:.1f}%")
 
 st.subheader("Purchase Confidence")
 st.progress(int(probability[0][1] * 100))
