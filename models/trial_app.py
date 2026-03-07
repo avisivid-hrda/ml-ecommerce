@@ -7,32 +7,26 @@ import plotly.express as px
 # PAGE CONFIG
 # --------------------------------------------------
 st.set_page_config(
-    page_title="E-commerce Purchase Intent Prediction",
+    page_title="Purchase Conversion Rate",
     page_icon="🛒",
     layout="wide"
 )
 
-st.title("Online Purchasing Prediction")
+# ----------------- MAIN TITLE --------------------
+st.title("🛒 E-COMMERCE SESSION PURCHASE INTENT PREDICTION")
+st.markdown("---")  # Horizontal line after title
+
+NUMERICAL_COLUMNS_ORDER = [
+    'admin', 'admin_duration', 'info', 'info_duration', 
+    'prod_related', 'prod_related_duration', 'bounce_rate', 
+    'exit_rate', 'page_value', 'special_day'
+]
 
 # --------------------------------------------------
 # LOAD MODEL
 # --------------------------------------------------
 with open("xgb_spw3_model.pkl", "rb") as model_file:
     model = pickle.load(model_file)
-
-# Fixed numerical columns order
-NUMERICAL_COLUMNS_ORDER = [
-    'admin',
-    'admin_duration',
-    'info',
-    'info_duration',
-    'prod_related',
-    'prod_related_duration',
-    'bounce_rate',
-    'exit_rate',
-    'page_value',
-    'special_day'
-]
 
 # --------------------------------------------------
 # FUNCTIONS
@@ -104,16 +98,51 @@ data, month, visitor, browser, os, region, traffic = user_input()
 # PREDICTION
 # --------------------------------------------------
 prediction, probability = predict(data)
-if probability[0][1] >= 0.58:
-    confidence = probability[0][1] * 100
-    st.success(f"✅ Purchase Made! — Confidence: {confidence:.1f}%")
-else:
-    confidence = probability[0][0] * 100
-    st.warning(f"❌ No Purchase Made. — Confidence: {confidence:.1f}%")
+conversion_rate = probability[0][1]
 
-st.subheader("Purchase Confidence")
-st.progress(int(probability[0][1] * 100))
-st.caption(f"Model confidence in purchase: {probability[0][1]*100:.1f}%")
+st.subheader("Conversion Rate Prediction")
+
+col1, col2 = st.columns([1, 2], gap="small")
+
+with col1:
+    st.markdown(
+        f"<h1 style='font-size:72px; color:black; margin:0'>{conversion_rate*100:.1f}%</h1>", 
+        unsafe_allow_html=True
+    )
+
+with col2:
+    if conversion_rate >= 0.5:
+        st.markdown(
+            f"""
+            <div style="
+                background-color: #16a34a; 
+                padding: 12px 20px; 
+                border-radius: 8px; 
+                color: white; 
+                font-size: 32px; 
+                font-weight: bold;">
+                ✅ Purchase Made! — Confidence: {conversion_rate*100:.1f}%
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        st.info("Practical Advice: Focus on upselling, recommend complementary products, and provide special offers.")
+    else:
+        st.markdown(
+            f"""
+            <div style="
+                background-color: #dc2626; 
+                padding: 12px 20px; 
+                border-radius: 8px; 
+                color: white; 
+                font-size: 32px; 
+                font-weight: bold;">
+                ❌ No Purchase Made. — Confidence: {(1-conversion_rate)*100:.1f}%
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        st.info("Practical Advice: Engage the user with discounts, personalized recommendations, or retargeting campaigns.")
 
 # --------------------------------------------------
 # SESSION PROFILING
@@ -156,16 +185,12 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # --------------------------------------------------
-# DYNAMIC MAX VALUE CALCULATION
-# --------------------------------------------------
-feature_max = {col: max(1, data[col]*2) if data[col]!=0 else 1 for col in NUMERICAL_COLUMNS_ORDER}
-
-# --------------------------------------------------
 # FEATURE IMPACT & INFLUENCE ANALYSIS
 # --------------------------------------------------
 st.divider()
 st.header("📊 Feature Impact for This Session")
 
+feature_max = {col: max(1, data[col]*2) if data[col]!=0 else 1 for col in NUMERICAL_COLUMNS_ORDER}
 feature_impacts = []
 _, base_prob = predict(data)
 base_conversion = base_prob[0][1]
@@ -185,9 +210,6 @@ df["Influence"] = (df["AbsImpact"] / total) * 100
 df = df.set_index("Feature").reindex(NUMERICAL_COLUMNS_ORDER).reset_index()
 df["Color"] = df["Impact"].apply(lambda x: "positive" if x >= 0 else "negative")
 
-# --------------------------------------------------
-# PLOT WITH FIXED ORDER, POS/NEG COLORS, PERCENTAGES ONLY, LEGEND
-# --------------------------------------------------
 fig = px.bar(
     df,
     x="Feature",
@@ -198,17 +220,19 @@ fig = px.bar(
 )
 
 fig.update_traces(
-    texttemplate="<b style='color:black;'>%{text:.1f}%</b>",  # Bold black percentage numbers
+    texttemplate="<b style='color:black;'>%{text:.1f}%</b>",
     textposition="outside"
 )
 
 fig.update_layout(
-    yaxis_title="<b style='color:black;'>Impact Rate (%)</b>",  # Bold black y-axis title
-    xaxis_title="<b style='color:black;'>Feature</b>",          # Bold black x-axis title
-    xaxis=dict(tickfont=dict(family="Arial", size=12, color="black")),  # Black tick labels
-    yaxis=dict(tickfont=dict(family="Arial", size=12, color="black")),  # Black tick labels
+    yaxis_title="<b style='color:black;'>Impact Rate (%)</b>",
+    xaxis_title="<b style='color:black;'>Feature</b>",
+    xaxis=dict(tickfont=dict(family="Arial", size=12, color="black"), fixedrange=True),
+    yaxis=dict(tickfont=dict(family="Arial", size=12, color="black"), fixedrange=True),
+    xaxis_title_standoff=20,
+    yaxis_title_standoff=20,
     showlegend=True,
-    legend_title_text="<b style='color:black;'>Impact Direction</b>"  # Bold black legend title
+    legend_title_text="<b style='color:black;'>Impact Direction</b>"
 )
 
 st.plotly_chart(fig, use_container_width=True)
