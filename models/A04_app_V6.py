@@ -82,14 +82,14 @@ prediction, probability = predict(user_input)
 
 if probability[0][1] >= 0.58:
     confidence = probability[0][1] * 100
-    st.success(f"✅ Purchase Made! — Confidence: {confidence:.1f}%")
+    st.success(f"### ✅ Purchase Made! — Confidence: {confidence:.1f}%")
 else:
     confidence = probability[0][0] * 100
-    st.warning(f"❌ No Purchase Made. — Confidence: {confidence:.1f}%")
+    st.warning(f"### ❌ No Purchase Made. — Confidence: {confidence:.1f}%")
 
 
 
 # Visual probability bar
-st.subheader('Purchase Confidence')
+st.subheader('  Purchase Confidence')
 st.progress(int(probability[0][1] * 100))
-st.caption(f"Model confidence in purchase: {probability[0][1]*100:.1f}%")
+st.caption(f"##### Model confidence in purchase: {probability[0][1]*100:.1f}%")
